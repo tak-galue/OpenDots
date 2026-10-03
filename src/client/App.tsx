@@ -612,9 +612,9 @@ export function App() {
                       <div>
                         <strong>Connect your Dot</strong>
                         <p>
-                          Connect your model and conversation service in
-                          Settings to start chatting. Your Spaces and Dot
-                          preferences are ready to use.
+                          {workspace.setup.provider === 'codex'
+                            ? 'Sign in with codex login, then restart OpenDots to start chatting.'
+                            : 'Connect your model and conversation service in Settings to start chatting. Your Spaces and Dot preferences are ready to use.'}
                         </p>
                         <a
                           href="https://github.com/CopilotKit/OpenDots/blob/main/docs/SETUP.md"
@@ -679,7 +679,9 @@ export function App() {
                     <span
                       className={`online-dot ${workspace.setup.slack === 'online' ? '' : 'off'}`}
                     />
-                    Slack · {workspace.setup.slack.replaceAll('_', ' ')}
+                    {workspace.setup.provider === 'codex'
+                      ? 'Codex · local conversations'
+                      : `Slack · ${workspace.setup.slack.replaceAll('_', ' ')}`}
                     <button
                       className="text-button"
                       onClick={() => setDialog({ type: 'settings' })}

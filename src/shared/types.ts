@@ -102,6 +102,7 @@ export interface CallReceipt {
   error: string | null;
 }
 export interface SetupStatus {
+  provider?: 'openai' | 'codex';
   intelligence: boolean;
   model: boolean;
   browser: boolean;

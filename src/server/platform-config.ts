@@ -1,6 +1,13 @@
 import type { WebConfig } from './parallel.js';
 import type { SetupStatus } from '../shared/types.js';
 export interface PlatformConfig extends WebConfig {
+  agentProvider?: 'openai' | 'codex';
+  codexBin?: string;
+  codexAuthHome?: string;
+  codexModel?: string;
+  codexEffort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
+  codexReady?: boolean;
+  conversationDatabase?: string;
   intelligenceKey?: string;
   intelligenceApiUrl?: string;
   intelligenceWsUrl?: string;
@@ -28,26 +35,34 @@ export function setupStatus(
   slack = 'not_configured',
   activationFailed = false,
 ): SetupStatus {
-  const missing = [
-    !config.intelligenceKey && 'INTELLIGENCE_API_KEY',
-    !config.apiKey && 'OPENAI_API_KEY',
-    !config.model && 'OPENAI_MODEL',
-  ].filter((item): item is string => !!item);
+  const codex = config.agentProvider === 'codex';
+  const missing = codex
+    ? config.codexReady
+      ? []
+      : ['CODEX_LOGIN']
+    : [
+        !config.intelligenceKey && 'INTELLIGENCE_API_KEY',
+        !config.apiKey && 'OPENAI_API_KEY',
+        !config.model && 'OPENAI_MODEL',
+      ].filter((item): item is string => !!item);
   const declaredSlack = !!(
     config.slackChannel &&
     config.slackTeam &&
     config.slackUsers.length
   );
-  slack = declaredSlack
-    ? activationFailed && slack !== 'online'
-      ? 'activation_failed'
-      : slack
-    : config.slackChannel || config.slackTeam || config.slackUsers.length
-      ? 'setup_required'
-      : 'not_configured';
+  slack = codex
+    ? 'unavailable_in_codex_mode'
+    : declaredSlack
+      ? activationFailed && slack !== 'online'
+        ? 'activation_failed'
+        : slack
+      : config.slackChannel || config.slackTeam || config.slackUsers.length
+        ? 'setup_required'
+        : 'not_configured';
   return {
-    intelligence: !!config.intelligenceKey,
-    model: !!(config.apiKey && config.model),
+    provider: codex ? 'codex' : 'openai',
+    intelligence: !codex && !!config.intelligenceKey,
+    model: codex ? !!config.codexReady : !!(config.apiKey && config.model),
     browser: !!(config.browserUrl && config.browserSecret),
     voice: !!(config.voiceKey && config.voiceModel && !missing.length),
     slack,

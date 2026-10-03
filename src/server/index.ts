@@ -25,7 +25,19 @@ const workspace = new WorkspaceStore(
   database,
   process.env.OWNER_ID ?? 'opendots-owner',
 );
+const provider = process.env.AGENT_PROVIDER ?? 'openai';
+if (!['openai', 'codex'].includes(provider))
+  throw new Error('AGENT_PROVIDER must be openai or codex.');
+const codexEffort = process.env.CODEX_REASONING_EFFORT || 'low';
+if (!['low', 'medium', 'high', 'xhigh', 'max', 'ultra'].includes(codexEffort))
+  throw new Error('CODEX_REASONING_EFFORT is not supported.');
 const config: PlatformConfig = {
+  agentProvider: provider as 'openai' | 'codex',
+  codexBin: process.env.CODEX_BIN || undefined,
+  codexAuthHome: process.env.CODEX_AUTH_HOME || undefined,
+  codexModel: process.env.CODEX_MODEL || undefined,
+  codexEffort: codexEffort as PlatformConfig['codexEffort'],
+  conversationDatabase: database,
   intelligenceKey: process.env.INTELLIGENCE_API_KEY,
   intelligenceApiUrl: process.env.INTELLIGENCE_API_URL || undefined,
   intelligenceWsUrl: process.env.INTELLIGENCE_WS_URL || undefined,
@@ -71,9 +83,9 @@ const runner = new Runner(
     const threadId = workspace.taskThread(claim.id);
     if (!threadId)
       throw new Error(
-        'This legacy task has no Intelligence conversation. Create a new scheduled task from a conversation.',
+        'This legacy task has no conversation. Create a new scheduled task from a conversation.',
       );
-    progress('Running this task in its Intelligence conversation.');
+    progress('Running this task in its saved conversation.');
     const text = await platform.turn(threadId, claim.prompt, signal);
     return { text, sources: [], sample: false };
   },
@@ -112,7 +124,9 @@ const server = serve({ fetch: app.fetch, hostname: host, port }, (info) => {
     .start()
     .catch((error) =>
       reportChannelFailure(
-        'Slack Channels activation failed; check setup status',
+        provider === 'codex'
+          ? 'Codex login check failed; check setup status'
+          : 'Slack Channels activation failed; check setup status',
         [safeFailure(error)],
       ),
     );

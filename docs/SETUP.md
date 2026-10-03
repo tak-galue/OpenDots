@@ -23,6 +23,50 @@ npm start
 
 Open http://127.0.0.1:4310. Keep the server running for background work.
 
+## Local Codex with your ChatGPT login
+
+OpenDots can use your existing file-based Codex ChatGPT login instead of model
+API keys and CopilotKit Intelligence. Install the Codex CLI and run `codex login`
+if you have not signed in, then set these server settings in `.env`:
+
+```dotenv
+AGENT_PROVIDER=codex
+CODEX_BIN=codex
+# Optional model selection; otherwise Codex uses its default model.
+# CODEX_MODEL=gpt-6.1-sol
+CODEX_REASONING_EFFORT=low
+```
+
+Restart OpenDots. Setup checks the Codex app-server protocol and ChatGPT login;
+a successful conversation confirms model access. This adapter was verified with
+Codex CLI 0.159.0 and uses its experimental dynamic-tool protocol. Use an absolute
+`CODEX_BIN` when the CLI is not on the server's PATH. `CODEX_AUTH_HOME` selects the
+authentication directory, defaulting to `CODEX_HOME` or `~/.codex`. File-based
+`auth.json` login is required; keyring-only login is not supported by this adapter.
+
+The server starts Codex through stdio, in a private temporary home linking the
+existing login. OpenDots does not parse tokens or send them to the browser. Host
+MCP servers, plugins, skills and project configuration are not imported. Each turn
+uses an ephemeral Codex thread; authoritative conversation messages are retained
+in the same local SQLite database as pages and replayed into the next turn. Back
+up this database to preserve local conversations. Existing Intelligence history
+is not migrated; switching providers requires a new conversation to avoid mixing
+histories.
+
+Text conversations, page conversations, page tools, review-before-save, permitted
+research, configured OpenBot computer tools, and scheduled turns use the local
+provider. Native Codex host tools are disabled or rejected; computer permissions
+remain controlled by OpenDots. A turn has the same 90-second bound as the original
+adapter. Human review returns control to the browser and continues in a new Codex
+turn after the decision. Long histories remain subject to model context limits.
+
+Managed Slack and CopilotKit Automatic Learning require the Intelligence provider
+and are unavailable in local Codex mode. Speech still requires a separate
+`VOICE_API_KEY` and `VOICE_MODEL`; the Codex ChatGPT login does not configure speech.
+Optional connected-service behavior must be verified with those services.
+
+Set `AGENT_PROVIDER=openai` to use the original provider described below.
+
 ## Conversation services
 
 Edit `.env` on the server and restart after changes:

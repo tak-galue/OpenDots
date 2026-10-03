@@ -287,7 +287,7 @@ export function WorkspaceDialog({
               </label>
             </>
           )}
-          {dialog.type === 'dot' && (
+          {dialog.type === 'dot' && workspace.setup.provider !== 'codex' && (
             <fieldset className="space-access-fields">
               <legend>Automatic Learning</legend>
               <label className="field-label" htmlFor="learning-container">
@@ -363,8 +363,12 @@ export function WorkspaceDialog({
               <strong>Service setup</strong>
               <p>
                 {workspace.setup.missing.length
-                  ? `Add ${workspace.setup.missing.join(', ')} to the server environment, then restart.`
-                  : 'Text configuration is present. A successful conversation confirms connectivity.'}
+                  ? workspace.setup.provider === 'codex'
+                    ? 'Sign in with codex login, then restart OpenDots.'
+                    : `Add ${workspace.setup.missing.join(', ')} to the server environment, then restart.`
+                  : workspace.setup.provider === 'codex'
+                    ? 'Codex is connected. Conversations are saved locally.'
+                    : 'Text configuration is present. A successful conversation confirms connectivity.'}
               </p>
               <p>
                 Slack: {workspace.setup.slack.replaceAll('_', ' ')}. Voice:{' '}
